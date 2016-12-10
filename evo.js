@@ -28,7 +28,7 @@ cfg.gamespeed = 16;
 cfg.tilesize = 10;
 cfg.plantBorder = 1;
 cfg.eatlimit = 40;
-cfg.frameskip: true;
+cfg.frameskip = true;
 
 var game;
 
