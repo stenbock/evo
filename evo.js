@@ -18,7 +18,9 @@ var defaultCfg = {
   startAnimals: 10,
   plantBorder: 1,
   gamespeed: 16,
-  frameskip: false
+  frameskip: false,
+  plantMutation: 10,
+  animalMutation: 10
 };
 var cfg = copyCfg(defaultCfg);
 cfg.startPlants = 100;
@@ -29,6 +31,7 @@ cfg.tilesize = 10;
 cfg.plantBorder = 1;
 cfg.eatlimit = 40;
 cfg.frameskip = true;
+cfg.animalMutation = 15;
 
 var game;
 
@@ -179,12 +182,11 @@ function Color(r, g, b) {
 Color.prototype.toString = function () {
   return "rgb(" + this.r + "," + this.g + "," + this.b + ")";
 }
-Color.prototype.mutate = function () {
-  // TODO: fix mutation variables
+Color.prototype.mutate = function (mut) {
   var c = new Color(this.r, this.g, this.b);
-  c.r += randomInt(-10, 10);
-  c.g += randomInt(-10, 10);
-  c.b += randomInt(-10, 10);
+  c.r += randomInt(-mut, mut);
+  c.g += randomInt(-mut, mut);
+  c.b += randomInt(-mut, mut);
   if (c.r > 255) { c.r = 255; }
   if (c.r < 0) { c.r = 0; }
   if (c.g > 255) { c.g = 255; }
@@ -261,7 +263,7 @@ Plant.prototype.grow = function() {
     if (ny < 0) { ny = 0; }
     f = game.getPlant(nx, ny);
     if (!f) {
-      nf = new Plant(nx, ny, this.color.mutate());
+      nf = new Plant(nx, ny, this.color.mutate(game.config.plantMutation));
       game.plantsAlive++;
       nf.size = 30;
       this.size = 60;
@@ -280,7 +282,7 @@ function Animal(x, y, color) {
   this.x = x;
   this.y = y;
   this.color = color;
-  this.life = randomInt(50, 100);
+  this.life = randomInt(100, 150);
   this.energy = 0;
 }
 Animal.prototype.draw = function(context) {
@@ -350,8 +352,8 @@ Animal.prototype.ai = function() {
       game.plantsAlive--;
     }
   }
-  if (this.energy > 1000) {  // breed
-    var na = new Animal(this.x, this.y, this.color.mutate());
+  if (this.energy > 2000) {  // breed
+    var na = new Animal(this.x, this.y, this.color.mutate(game.config.animalMutation));
     this.energy = 0;
     game.animals.push(na);
   }
