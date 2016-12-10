@@ -1,4 +1,5 @@
 // TODO: Herbivores and Carnivores (and Omnivores?)
+// TODO: Control panel
 // TODO: Optionally skip rendering frames to increase ticks per second
 var screenW = document.body.clientWidth;
 var screenH = document.body.clientHeight;
@@ -23,10 +24,11 @@ var cfg = copyCfg(defaultCfg);
 cfg.startPlants = 100;
 cfg.startAnimals = 10;
 cfg.endOnEmpty = true;
-cfg.gamespeed = 1;
+cfg.gamespeed = 16;
 cfg.tilesize = 10;
-cfg.plantBorder = 0;
+cfg.plantBorder = 1;
 cfg.eatlimit = 40;
+cfg.frameskip: true;
 
 var game;
 
@@ -111,7 +113,6 @@ Game.prototype.tick = function () {
 Game.prototype.render = function () {
   this.frameNumber++;
 
-  // TODO: double check rerender doubles and nulls
   for (var i = 0; i < this.rerender.length; i++) {
     if (!this.rerender[i])
       continue;
@@ -171,10 +172,9 @@ Game.prototype.getPlant = function (x, y) {
 }
 
 function Color(r, g, b) {
-  // TODO: fix this for 0 color
-  this.r = r ? r : randomInt(0, 255);
-  this.g = g ? g : randomInt(0, 255);
-  this.b = b ? b : randomInt(0, 255);
+  this.r = r !== undefined ? r : randomInt(0, 255);
+  this.g = g !== undefined ? g : randomInt(0, 255);
+  this.b = b !== undefined ? b : randomInt(0, 255);
 }
 Color.prototype.toString = function () {
   return "rgb(" + this.r + "," + this.g + "," + this.b + ")";
@@ -185,13 +185,12 @@ Color.prototype.mutate = function () {
   c.r += randomInt(-10, 10);
   c.g += randomInt(-10, 10);
   c.b += randomInt(-10, 10);
-  // TODO: fix for 0 color
   if (c.r > 255) { c.r = 255; }
-  if (c.r < 1) { c.r = 1; }
+  if (c.r < 0) { c.r = 0; }
   if (c.g > 255) { c.g = 255; }
-  if (c.g < 1) { c.g = 1; }
+  if (c.g < 0) { c.g = 0; }
   if (c.b > 255) { c.b = 255; }
-  if (c.b < 1) { c.b = 1; }
+  if (c.b < 0) { c.b = 0; }
   return c;
 }
 
