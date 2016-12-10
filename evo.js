@@ -82,12 +82,36 @@ function Game(config) {
 
   this.lastRenderTime = 0;
   this.fpsa = [];
+  this.fps = 0;
 }
 Game.prototype.start = function (time) {
   this.interval = setInterval(function() {
     game.tick();
     game.render();
+    game.calculateFPS();
   }, this.config.gamespeed);
+}
+Game.prototype.calculateFPS = function () {
+  var fps;
+  if (this.lastRenderTime)
+    fps = Math.floor(1000/(Date.now() - this.lastRenderTime));
+  else
+    fps = 0;
+
+  this.fpsa.push(fps);
+
+  if (this.fpsa.length > 60)
+    this.fpsa.shift();
+
+  sum = this.fpsa.reduce((pv, cv) => pv+cv, 0);
+  sum = sum/this.fpsa.length;
+  if (sum > 10) {
+    sum = Math.floor(sum);
+  } else {
+    sum = Math.floor(sum*10)/10;
+  }
+  this.fps = sum;
+  this.lastRenderTime = Date.now();
 }
 Game.prototype.stop = function () {
   clearInterval(this.interval);
@@ -132,30 +156,11 @@ Game.prototype.render = function () {
     this.animals[i].draw(context);
   }
 
-  var fps;
-  if (this.lastRenderTime)
-    fps = Math.floor(1000/(Date.now() - this.lastRenderTime));
-  else
-    fps = 0;
-
-  this.fpsa.push(fps);
-
-  if (this.fpsa.length > 60)
-    this.fpsa.shift();
-
-  sum = this.fpsa.reduce((pv, cv) => pv+cv, 0);
-  sum = sum/this.fpsa.length;
-  if (sum > 10) {
-    sum = Math.floor(sum);
-  } else {
-    sum = Math.floor(sum*10)/10;
-  }
   
   datadiv.innerHTML = "Size: " + this.max_x + "x" + this.max_y + "<br>" +
                       "Plants: " + this.plantsAlive + "<br>" +
                       "Animals: " + this.animals.length + "<br>" +
-                      "FPS: " + sum;
-  this.lastRenderTime = Date.now();
+                      "FPS: " + this.fps;
 }
 Game.prototype.rerenderRq = function (obj) {
   if (!this.rerender[obj.x]) {
