@@ -18,7 +18,6 @@ var defaultCfg = {
   startAnimals: 10,
   plantBorder: 1,
   gamespeed: 16,
-  frameskip: false,
   plantMutation: 10,
   animalMutation: 10
 };
@@ -30,7 +29,6 @@ cfg.gamespeed = 16;
 cfg.tilesize = 10;
 cfg.plantBorder = 1;
 cfg.eatlimit = 40;
-cfg.frameskip = true;
 cfg.animalMutation = 15;
 
 var game;
@@ -216,8 +214,11 @@ Plant.prototype.draw = function(context) {
   var startx = this.x*t;
   var starty = this.y*t;
 
-  context.fillStyle = 'black';
-  context.fillRect(startx, starty, t, t);
+  if (this.visited) {
+    context.fillStyle = 'black';
+    context.fillRect(startx, starty, t, t);
+    this.visited = false;
+  }
 
   var size = t - game.config.plantBorder;
 
@@ -332,6 +333,7 @@ Animal.prototype.move = function() {
 Animal.prototype.ai = function() {
   // TODO: split ai into parts, and make it modular
   var f = game.getPlant(this.x, this.y);
+  if (f) { f.visited = true; }
   game.rerenderRq(f != null ? f : new RerenderSq(this.x, this.y));
   this.life--;
   if (this.life <= 0) {
