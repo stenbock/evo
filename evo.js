@@ -25,7 +25,7 @@ var cfg = copyCfg(defaultCfg);
 cfg.startPlants = 100;
 cfg.startAnimals = 10;
 cfg.endOnEmpty = true;
-cfg.gamespeed = 16;
+cfg.gamespeed = 10;
 cfg.tilesize = 10;
 cfg.plantBorder = 1;
 cfg.eatlimit = 40;
@@ -59,21 +59,13 @@ function Game(config) {
       if (!this.plants[x]) {
         this.plants[x] = [];
       }
-      this.plants[x][y] = new Plant(x, y, new Color(1, 255, 1));
+      this.plants[x][y] = new Plant(x, y, new Color(0, randomInt(128, 255), 0));
     }
-
-    /*
-    if (plotFree && i%2 == 0) {
-      this.plants[x][y] = new Plant(x, y, new Color(1, 255, 1));
-    } else if (plotFree) {
-      this.plants[x][y] = new Plant(x, y, new Color(1, 128, 1));
-    }
-    */
   }
   for (var i = 0; i < this.config.startAnimals; i++) {
     var x = randomInt(0, this.max_x);
     var y = randomInt(0, this.max_x);
-    var na = new Animal(x, y, new Color(1, 255, 1));
+    var na = new Animal(x, y, new Color(0, 255, 0));
     na.life += 100;
     this.animals.push(na);
   }
@@ -200,15 +192,12 @@ Color.prototype.mutate = function (mut) {
 }
 
 function Plant(x, y, color) {
-  // TODO: should probably track energy appart from size
   this.x = x;
   this.y = y;
   this.color = color;
   this.size = 10;
 }
 Plant.prototype.draw = function(context) {
-  // TODO: needs variability
-
   var t = game.config.tilesize;
 
   var startx = this.x*t;
@@ -241,42 +230,19 @@ Plant.prototype.grow = function() {
     game.rerenderRq(this);
   }
   if (this.size >= 100) {
-    var f;
-    var nx, ny;
-    // TODO: position object? with generalized features
-    //       or just have inheritance shared with Animals
-    var r = randomInt(0, 3);
-    switch (r) {
-      case 0:
-        nx = this.x+1;
-        ny = this.y;
-        break;
-      case 1:
-        nx = this.x;
-        ny = this.y+1;
-        break;
-      case 2:
-        nx = this.x-1;
-        ny = this.y;
-        break;
-      default:
-        nx = this.x;
-        ny = this.y-1;
-    }
-    if (nx > game.max_x) { nx = game.max_x; }
-    if (nx < 0) { nx = 0; }
-    if (ny > game.max_y) { ny = game.max_y; }
-    if (ny < 0) { ny = 0; }
-    f = game.getPlant(nx, ny);
-    if (!f) {
-      nf = new Plant(nx, ny, this.color.mutate(game.config.plantMutation));
+    var d = randomDir(this.x, this.y);
+    var p = game.getPlant(d.x, d.y);
+    if (!p) {
+      var np = new Plant(d.x, d.y, this.color.mutate(game.config.plantMutation));
       game.plantsAlive++;
-      nf.size = 30;
+      np.size = 30;
       this.size = 60;
-      if (!game.plants[nx]) {
-        game.plants[nx] = [];
+
+      // TODO: addPlant
+      if (!game.plants[d.x]) {
+        game.plants[d.x] = [];
       }
-      game.plants[nx][ny] = nf;
+      game.plants[d.x][d.y] = np;
       game.rerenderRq(this);
     } else {
       this.size = 100;
@@ -288,7 +254,7 @@ function Animal(x, y, color) {
   this.x = x;
   this.y = y;
   this.color = color;
-  this.life = randomInt(100, 150);
+  this.life = randomInt(150, 200);
   this.energy = 0;
 }
 Animal.prototype.draw = function(context) {
@@ -303,68 +269,82 @@ Animal.prototype.draw = function(context) {
   context.stroke();
 }
 Animal.prototype.move = function() {
-  // TODO: generalized class, inherit this func. See Plant
-  var nx, ny;
-  var r = randomInt(0, 3);
-  switch (r) {
-    case 0:
-      nx = this.x+1;
-      ny = this.y;
-      break;
-    case 1:
-      nx = this.x;
-      ny = this.y+1;
-      break;
-    case 2:
-      nx = this.x-1;
-      ny = this.y;
-      break;
-    default:
-      nx = this.x;
-      ny = this.y-1;
+  var d = randomDir(this.x, this.y);
+  var ps = [];
+  var eat = 0;
+  var eatp;
+
+  // TODO: not map limit safe
+  ps[0] = game.getPlant(this.x+1, this.y);
+  ps[1] = game.getPlant(this.x, this.y+1);
+  ps[2] = game.getPlant(this.x-1, this.y);
+  ps[3] = game.getPlant(this.x, this.y-1);
+
+  for (var i = 0; i < ps.length; i++) {
+    var e = this.eatVal(ps[i]);
+
+    if (ps[i] && ps[i].x == d.x && ps[i].y == d.y) {
+      e += 1; // small incentive to get them going in random directions
+    }
+
+    if (e > eat) {
+      eatp = ps[i];
+      eat = e;
+    }
   }
-  if (nx >= game.max_x) { nx = game.max_x; }
-  if (nx < 0) { nx = 0; }
-  if (ny >= game.max_y) { ny = game.max_y; }
-  if (ny < 0) { ny = 0; }
-  this.x = nx;
-  this.y = ny;
+
+  if (eat > game.config.eatlimit) {
+    this.x = eatp.x;
+    this.y = eatp.y;
+  } else {
+    this.x = d.x;
+    this.y = d.y;
+  }
 }
 Animal.prototype.ai = function() {
   // TODO: split ai into parts, and make it modular
-  var f = game.getPlant(this.x, this.y);
-  if (f) { f.visited = true; }
-  game.rerenderRq(f != null ? f : new RerenderSq(this.x, this.y));
+  // TODO: starvation
+  var p = game.getPlant(this.x, this.y);
+  if (p) { p.visited = true; }
+  game.rerenderRq(p != null ? p : new RerenderSq(this.x, this.y));
   this.life--;
   if (this.life <= 0) {
     deleteAnimal(this);
-    return null;
+    return;
   }
-  if (f == null) {  // move
+
+  var eat = this.eatVal(p);
+  if (eat < game.config.eatlimit) {  // move
     this.move();
   } else {  // eat
-    var eff = Math.abs(this.color.r - f.color.r);
-    eff += Math.abs(this.color.g - f.color.g);
-    eff += Math.abs(this.color.b - f.color.b);
-    eff = 1-eff/765;
-    var eat = Math.floor(50*eff);
-     if (eat < game.config.eatlimit) {
-       this.move();
-      return null;
-     }
-    this.energy += eat;
-    f.size -= eat;
-    if (f.size <= 0) {
-      game.plants[f.x][f.y] = null;
+    if (p.size < eat) {
+      this.energy += p.size;
+      p.size = -1;
+      game.plants[p.x][p.y] = null;
       game.plantsAlive--;
+    } else {
+      this.energy += eat;
+      p.size -= eat;
     }
   }
+
   if (this.energy > 2000) {  // breed
     var na = new Animal(this.x, this.y, this.color.mutate(game.config.animalMutation));
     this.energy = 0;
     game.animals.push(na);
   }
 }
+Animal.prototype.eatVal = function (p) {
+  if (!p)
+    return 0;
+
+  var eff = Math.abs(this.color.r - p.color.r);
+  eff += Math.abs(this.color.g - p.color.g);
+  eff += Math.abs(this.color.b - p.color.b);
+  eff = 1-eff/765;
+  return Math.floor(50*eff);
+}
+
 function RerenderSq(x, y) {
   this.x = x;
   this.y = y;
@@ -383,6 +363,33 @@ function deleteAnimal(a) {
 
 function randomInt(min, max) {
   return Math.floor(Math.random()*(max-min+1)+min);
+}
+
+function randomDir(x, y) {
+  var d = {x, y};
+  var r = randomInt(0, 3);
+  switch (r) {
+    case 0:
+      d.x = x+1;
+      d.y = y;
+      break;
+    case 1:
+      d.x = x;
+      d.y = y+1;
+      break;
+    case 2:
+      d.x = x-1;
+      d.y = y;
+      break;
+    default:
+      d.x = x;
+      d.y = y-1;
+  }
+  if (d.x > game.max_x) { d.x = game.max_x; }
+  if (d.x < 0) { d.x = 0; }
+  if (d.y > game.max_y) { d.y = game.max_y; }
+  if (d.y < 0) { d.y = 0; }
+  return d;
 }
 
 function copyCfg(cfg) {
