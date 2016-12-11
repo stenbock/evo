@@ -24,14 +24,15 @@ var defaultCfg = {
   animalMutation: 10
 };
 var cfg = copyCfg(defaultCfg);
-cfg.startPlants = 100;
-cfg.startAnimals = 10;
+cfg.startPlants = 200;
+cfg.startAnimals = 20;
 cfg.endOnEmpty = true;
 cfg.gamespeed = 10;
 cfg.tilesize = 10;
 cfg.plantBorder = 1;
 cfg.eatlimit = 40;
 cfg.animalMutation = 15;
+cfg.plantMutation = 5;
 
 var game;
 
@@ -69,7 +70,8 @@ function Game(config) {
     var x = randomInt(0, this.max_x);
     var y = randomInt(0, this.max_x);
     var na = new Animal(x, y, new Color(0, 255, 0));
-    na.life += 100;
+    na.life += 200;
+    na.energy += 200;
     this.animals.push(na);
   }
 
@@ -134,8 +136,8 @@ Game.prototype.tick = function () {
     messagediv.style.display = "block";
     this.stop();
   } else if (this.config.endOnEmpty && this.animals.length == 0) {
-    messagediv.innerHTML = "Animals went extinct <br>" +
-                           "Starvation: " + this.deaths.starvation +
+    messagediv.innerHTML = "<p>Animals went extinct!</p>" +
+                           "Starvation: " + this.deaths.starvation + "<br>" +
                            "Old age: " + this.deaths.oldage;
     messagediv.style.display = "block";
     this.stop();
@@ -268,8 +270,8 @@ function Animal(x, y, color) {
   this.x = x;
   this.y = y;
   this.color = color;
-  this.life = randomInt(500, 1000);
-  this.energy = 100;
+  this.life = randomInt(500, 600);
+  this.energy = 200;
 }
 Animal.prototype.draw = function(context) {
   context.beginPath();
@@ -328,7 +330,7 @@ Animal.prototype.ai = function() {
     return;
   }
 
-  this.energy -= 3;
+  this.energy -= 10;
   if (this.energy <= 0) {
     game.deaths.starvation++;
     deleteAnimal(this);
@@ -350,7 +352,7 @@ Animal.prototype.ai = function() {
     }
   }
 
-  if (this.energy > 3000) {  // breed
+  if (this.energy > 4000) {  // breed
     var na = new Animal(this.x, this.y, this.color.mutate(game.config.animalMutation));
     this.energy = 2000;
     game.animals.push(na);
