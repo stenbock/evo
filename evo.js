@@ -2,6 +2,10 @@
 // TODO: Control panel
 // TODO: Help Box
 // TODO: Optionally skip rendering frames to increase ticks per second
+// TODO: generalized, importable/exportable types
+// TODO: special organism designs: locust, pirana, tree
+// TODO: do experiments with 0 mutation systems, like black/white plants and animals
+// TODO: make it possible to run many simulations side by side!
 var screenW = document.body.clientWidth;
 var screenH = document.body.clientHeight;
 
@@ -92,6 +96,16 @@ Game.prototype.start = function () {
     game.render();
     game.calculateFPS();
   }, this.config.gamespeed);
+  setInterval(function() {
+    // TODO: does not behave as intended, is javascripts scheduler weird?
+    game.updateStats();
+  }, 1000);
+}
+Game.prototype.updateStats = function () {
+  statsdiv.innerHTML = "Size: " + this.max_x + "x" + this.max_y + "<br>" +
+                      "Plants: " + this.plantsAlive + "<br>" +
+                      "Animals: " + this.animals.length + "<br>" +
+                      "FPS: " + this.fps;
 }
 Game.prototype.calculateFPS = function () {
   var fps;
@@ -137,7 +151,7 @@ Game.prototype.tick = function () {
     messagediv.style.display = "block";
     this.stop();
   } else if (this.config.endOnEmpty && this.animals.length == 0) {
-    messagediv.innerHTML = "<p>☠Animals went extinct!☠</p>" +
+    messagediv.innerHTML = "<p>☠Animals went extinct☠</p>" +
                            "Starvation: " + this.deaths.starvation + "<br>" +
                            "Old age: " + this.deaths.oldage;
     messagediv.style.display = "block";
@@ -164,10 +178,6 @@ Game.prototype.render = function () {
   }
 
   
-  statsdiv.innerHTML = "Size: " + this.max_x + "x" + this.max_y + "<br>" +
-                      "Plants: " + this.plantsAlive + "<br>" +
-                      "Animals: " + this.animals.length + "<br>" +
-                      "FPS: " + this.fps;
 }
 Game.prototype.rerenderRq = function (obj) {
   if (!this.rerender[obj.x]) {
@@ -428,7 +438,6 @@ function copyCfg(cfg) {
 }
 
 document.addEventListener("click", function (e) {
-  console.log("Mouse click:", e);
   if (e.toElement == canvas && !game.running) {
     messagediv.style.display = "none";
     game = new Game(cfg);
@@ -444,6 +453,8 @@ document.addEventListener("click", function (e) {
   }
 });
 
+// TODO: fix stuck buttons
+// TODO: fix button stuck after restart
 var prevbtn;
 function uiSetSpeed(speed, caller) {
   if (speed == 0 && game.running) {
@@ -455,8 +466,11 @@ function uiSetSpeed(speed, caller) {
     prevbtn.classList.add("selected-btn");
     game.start();
   } else {
-    prevbtn = document.getElementsByClassName("selected-btn")[0];
-    prevbtn.classList.remove("selected-btn");
+    var buttons = document.getElementsByClassName("selected-btn");
+    for (var i = 0; i < buttons.length; i++) {
+      buttons[i].classList.remove("selected-btn");
+    }
+    prevbtn = caller;
     caller.classList.add("selected-btn");
     game.stop();
     game.config.gamespeed = speed;
