@@ -73,6 +73,11 @@ function Game(config) {
     this.animals.push(na);
   }
 
+  this.deaths = {
+    oldage: 0,
+    starvation: 0
+  }
+
   this.lastRenderTime = 0;
   this.fpsa = [];
   this.fps = 0;
@@ -129,7 +134,9 @@ Game.prototype.tick = function () {
     messagediv.style.display = "block";
     this.stop();
   } else if (this.config.endOnEmpty && this.animals.length == 0) {
-    messagediv.innerHTML = "Animals went extinct";
+    messagediv.innerHTML = "Animals went extinct <br>" +
+                           "Starvation: " + this.deaths.starvation +
+                           "Old age: " + this.deaths.oldage;
     messagediv.style.display = "block";
     this.stop();
   }
@@ -261,8 +268,8 @@ function Animal(x, y, color) {
   this.x = x;
   this.y = y;
   this.color = color;
-  this.life = randomInt(150, 200);
-  this.energy = 0;
+  this.life = randomInt(500, 1000);
+  this.energy = 100;
 }
 Animal.prototype.draw = function(context) {
   context.beginPath();
@@ -316,6 +323,14 @@ Animal.prototype.ai = function() {
   game.rerenderRq(p != null ? p : new RerenderSq(this.x, this.y));
   this.life--;
   if (this.life <= 0) {
+    game.deaths.oldage++;
+    deleteAnimal(this);
+    return;
+  }
+
+  this.energy -= 3;
+  if (this.energy <= 0) {
+    game.deaths.starvation++;
     deleteAnimal(this);
     return;
   }
@@ -335,9 +350,9 @@ Animal.prototype.ai = function() {
     }
   }
 
-  if (this.energy > 2000) {  // breed
+  if (this.energy > 3000) {  // breed
     var na = new Animal(this.x, this.y, this.color.mutate(game.config.animalMutation));
-    this.energy = 0;
+    this.energy = 2000;
     game.animals.push(na);
   }
 }
