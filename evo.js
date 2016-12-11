@@ -1,5 +1,6 @@
 // TODO: Herbivores and Carnivores (and Omnivores?)
 // TODO: Control panel
+// TODO: Help Box
 // TODO: Optionally skip rendering frames to increase ticks per second
 var screenW = document.body.clientWidth;
 var screenH = document.body.clientHeight;
@@ -402,11 +403,18 @@ function copyCfg(cfg) {
   return JSON.parse(JSON.stringify(cfg));   // weird way to copy object
 }
 
-document.addEventListener("click", function () {
+document.addEventListener("click", function (e) {
   if (!game.running) {
     messagediv.style.display = "none";
     game = new Game(cfg);
     game.start();
+  } else {
+    var p = game.getPlant(Math.floor(e.pageX/game.config.tilesize),
+                          Math.floor(e.pageY/game.config.tilesize));
+    if (p) {
+      var a = new Animal(p.x, p.y, p.color);
+      game.animals.push(a);
+    }
   }
 });
 
