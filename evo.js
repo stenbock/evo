@@ -1,11 +1,13 @@
-// TODO: Herbivores and Carnivores (and Omnivores?)
-// TODO: Control panel
-// TODO: Help Box
-// TODO: Optionally skip rendering frames to increase ticks per second
-// TODO: generalized, importable/exportable types
-// TODO: special organism designs: locust, pirana, tree
-// TODO: do experiments with 0 mutation systems, like black/white plants and animals
-// TODO: make it possible to run many simulations side by side!
+//  --- Feature Wishlist ---
+// Herbivores and Carnivores (and Omnivores?)
+// Control panel (hand of god)
+// Help Box
+// Optionally skip rendering frames to increase ticks per second
+// generalized, importable/exportable types
+// special organism designs: locust, pirana, tree
+// do experiments with 0 mutation systems, like black/white plants and animals
+// make it possible to run many simulations side by side!
+// live changing size of the map
 var screenW = document.body.clientWidth;
 var screenH = document.body.clientHeight;
 
@@ -28,7 +30,7 @@ var defaultCfg = {
   animalMutation: 10
 };
 var cfg = copyCfg(defaultCfg);
-cfg.startPlants = 200;
+cfg.startPlants = 400;
 cfg.startAnimals = 20;
 cfg.endOnEmpty = true;
 cfg.gamespeed = 16;
@@ -41,7 +43,7 @@ cfg.plantMutation = 5;
 var game;
 
 function Game(config) {
-  this.config = copyCfg(config);
+  this.config = config;
   this.frameNumber = 0;
   this.interval;
   this.rerender = [[]];
@@ -75,7 +77,7 @@ function Game(config) {
     var y = randomInt(0, this.max_x);
     var na = new Animal(x, y, new Color(0, 255, 0));
     na.life += 200;
-    na.energy += 200;
+    na.energy += 400;
     this.animals.push(na);
   }
 
@@ -153,7 +155,8 @@ Game.prototype.tick = function () {
   } else if (this.config.endOnEmpty && this.animals.length == 0) {
     messagediv.innerHTML = "<p>☠Animals went extinct☠</p>" +
                            "Starvation: " + this.deaths.starvation + "<br>" +
-                           "Old age: " + this.deaths.oldage;
+                           "Old age: " + this.deaths.oldage + "<br>" +
+                           "Click to restart";
     messagediv.style.display = "block";
     this.stop();
   }
@@ -252,8 +255,9 @@ Plant.prototype.draw = function(context) {
 }
 Plant.prototype.grow = function() {
   // TODO: could use a huge rethink
+  var r = randomInt(0, 5);
   if (this.size < 100) {
-    this.size += randomInt(1, 10);
+    this.size += r;
     game.rerenderRq(this);
   }
   if (this.size >= 100) {
@@ -281,9 +285,9 @@ function Animal(x, y, color) {
   this.x = x;
   this.y = y;
   this.color = color;
-  this.life = randomInt(500, 600);
-  this.energy = 200;
-  this.reproductionCooldown = 200;
+  this.life = randomInt(600, 700);
+  this.energy = 300;
+  this.reproductionCooldown = 300;
 }
 Animal.prototype.draw = function(context) {
   context.beginPath();
@@ -329,7 +333,6 @@ Animal.prototype.move = function() {
 }
 Animal.prototype.ai = function() {
   // TODO: split ai into parts, and make it modular
-  // TODO: starvation
   this.reproductionCooldown--;
   this.energy -= 10;
   this.life--;
@@ -436,23 +439,27 @@ function copyCfg(cfg) {
 }
 
 document.addEventListener("click", function (e) {
-  if (e.toElement == canvas && !game.running) {
+  if (e.toElement == messagediv && !game.running) {
     messagediv.style.display = "none";
     game = new Game(cfg);
     game.start();
   } else if (e.toElement == canvas) {
+    if (messagediv.style.display == "block") {
+      messagediv.style.display = "none";
+      game.start();
+    }
     var p = game.getPlant(Math.floor(e.pageX/game.config.tilesize),
                           Math.floor(e.pageY/game.config.tilesize));
     if (p) {
       var a = new Animal(p.x, p.y, p.color);
       game.animals.push(a);
       console.log("Mouse click created:", a);
+      game.render();
     }
   }
 });
 
 // TODO: fix stuck buttons
-// TODO: fix button stuck after restart
 var prevbtn;
 function uiSetSpeed(speed, caller) {
   if (speed == 0 && game.running) {
@@ -472,6 +479,7 @@ function uiSetSpeed(speed, caller) {
     caller.classList.add("selected-btn");
     game.stop();
     game.config.gamespeed = speed;
+    cfg.gamespeed = speed;
     game.start();
   }
 }
