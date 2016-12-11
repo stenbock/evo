@@ -17,10 +17,22 @@ top: 0;
 left: 0;
 }
 
-#datadiv {
+#message {
+position: absolute;
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%);
+font-size: 26px;
+display: none;
+}
+
+#stats {
 position: absolute;
 top: 25px;
 right:25px;
+}
+
+div {
 padding: 5px 15px;
 color: #eee;
 font-size: 13px;

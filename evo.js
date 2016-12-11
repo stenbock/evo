@@ -4,7 +4,8 @@
 var screenW = document.body.clientWidth;
 var screenH = document.body.clientHeight;
 
-var datadiv = document.getElementById("datadiv");
+var statsdiv = document.getElementById("stats");
+var messagediv = document.getElementById("message");
 var canvas = document.getElementById("canvas");
 var context = canvas.getContext("2d");
 canvas.width = screenW;
@@ -38,6 +39,7 @@ function Game(config) {
   this.frameNumber = 0;
   this.interval;
   this.rerender = [[]];
+  this.running = false;
 
   this.plants = [[]];
   this.plantsAlive = 0;
@@ -75,6 +77,7 @@ function Game(config) {
   this.fps = 0;
 }
 Game.prototype.start = function (time) {
+  this.running = true;
   this.interval = setInterval(function() {
     game.tick();
     game.render();
@@ -104,6 +107,7 @@ Game.prototype.calculateFPS = function () {
   this.lastRenderTime = Date.now();
 }
 Game.prototype.stop = function () {
+  this.running = false;
   clearInterval(this.interval);
   this.render();
 }
@@ -120,10 +124,12 @@ Game.prototype.tick = function () {
     this.animals[i].ai();
   }
   if (this.config.endOnEmpty && this.plantsAlive == 0) {
-    console.log("Ran out of plants");
+    messagediv.innerHTML = "Plants went extinct";
+    messagediv.style.display = "block";
     this.stop();
   } else if (this.config.endOnEmpty && this.animals.length == 0) {
-    console.log("Animals went extinct");
+    messagediv.innerHTML = "Animals went extinct";
+    messagediv.style.display = "block";
     this.stop();
   }
 }
@@ -147,7 +153,7 @@ Game.prototype.render = function () {
   }
 
   
-  datadiv.innerHTML = "Size: " + this.max_x + "x" + this.max_y + "<br>" +
+  statsdiv.innerHTML = "Size: " + this.max_x + "x" + this.max_y + "<br>" +
                       "Plants: " + this.plantsAlive + "<br>" +
                       "Animals: " + this.animals.length + "<br>" +
                       "FPS: " + this.fps;
@@ -395,6 +401,14 @@ function randomDir(x, y) {
 function copyCfg(cfg) {
   return JSON.parse(JSON.stringify(cfg));   // weird way to copy object
 }
+
+document.addEventListener("click", function () {
+  if (!game.running) {
+    messagediv.style.display = "none";
+    game = new Game(cfg);
+    game.start();
+  }
+});
 
 game = new Game(cfg);
 game.start();
