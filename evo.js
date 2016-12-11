@@ -309,7 +309,7 @@ Animal.prototype.move = function() {
   ps[3] = game.getPlant(this.x, this.y-1);
 
   for (var j = 0; j < ps.length; j++) {
-    var i = j+r % 4;
+    var i = (j+r) % 4;
     var e = this.eatVal(ps[i]);
 
     if (e > eat) {
