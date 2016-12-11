@@ -297,7 +297,7 @@ Animal.prototype.draw = function(context) {
   context.stroke();
 }
 Animal.prototype.move = function() {
-  var d = randomDir(this.x, this.y);
+  var r = randomInt(0, 3);
   var ps = [];
   var eat = 0;
   var eatp;
@@ -308,12 +308,9 @@ Animal.prototype.move = function() {
   ps[2] = game.getPlant(this.x-1, this.y);
   ps[3] = game.getPlant(this.x, this.y-1);
 
-  for (var i = 0; i < ps.length; i++) {
+  for (var j = 0; j < ps.length; j++) {
+    var i = j+r % 4;
     var e = this.eatVal(ps[i]);
-
-    if (ps[i] && ps[i].x == d.x && ps[i].y == d.y) {
-      e += 1; // small incentive to get them going in random directions
-    }
 
     if (e > eat) {
       eatp = ps[i];
@@ -325,6 +322,7 @@ Animal.prototype.move = function() {
     this.x = eatp.x;
     this.y = eatp.y;
   } else {
+    var d = randomDir(this.x, this.y);
     this.x = d.x;
     this.y = d.y;
   }
