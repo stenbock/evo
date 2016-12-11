@@ -272,6 +272,7 @@ function Animal(x, y, color) {
   this.color = color;
   this.life = randomInt(500, 600);
   this.energy = 200;
+  this.reproductionCooldown = 200;
 }
 Animal.prototype.draw = function(context) {
   context.beginPath();
@@ -320,17 +321,19 @@ Animal.prototype.move = function() {
 Animal.prototype.ai = function() {
   // TODO: split ai into parts, and make it modular
   // TODO: starvation
+  this.reproductionCooldown--;
+  this.energy -= 10;
+  this.life--;
+
   var p = game.getPlant(this.x, this.y);
   if (p) { p.visited = true; }
   game.rerenderRq(p != null ? p : new RerenderSq(this.x, this.y));
-  this.life--;
   if (this.life <= 0) {
     game.deaths.oldage++;
     deleteAnimal(this);
     return;
   }
 
-  this.energy -= 10;
   if (this.energy <= 0) {
     game.deaths.starvation++;
     deleteAnimal(this);
@@ -341,7 +344,9 @@ Animal.prototype.ai = function() {
   if (eat < game.config.eatlimit) {  // move
     this.move();
   } else {  // eat
-    if (p.size < eat) {
+    if (p.size < eat && this.energy > 4000) { // graze
+      this.move();
+    } else if (p.size < eat) {
       this.energy += p.size;
       p.size = -1;
       game.plants[p.x][p.y] = null;
@@ -352,9 +357,10 @@ Animal.prototype.ai = function() {
     }
   }
 
-  if (this.energy > 4000) {  // breed
+  if (this.reproductionCooldown <= 0 && this.energy > 4000) {  // breed
     var na = new Animal(this.x, this.y, this.color.mutate(game.config.animalMutation));
     this.energy = 2000;
+    this.reproductionCooldown = 200;
     game.animals.push(na);
   }
 }
@@ -431,6 +437,7 @@ document.addEventListener("click", function (e) {
     if (p) {
       var a = new Animal(p.x, p.y, p.color);
       game.animals.push(a);
+      console.log("Mouse click created:", a);
     }
   }
 });
