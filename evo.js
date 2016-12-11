@@ -27,7 +27,7 @@ var cfg = copyCfg(defaultCfg);
 cfg.startPlants = 200;
 cfg.startAnimals = 20;
 cfg.endOnEmpty = true;
-cfg.gamespeed = 10;
+cfg.gamespeed = 16;
 cfg.tilesize = 10;
 cfg.plantBorder = 1;
 cfg.eatlimit = 40;
@@ -77,14 +77,15 @@ function Game(config) {
 
   this.deaths = {
     oldage: 0,
-    starvation: 0
+    starvation: 0,
+    predation: 0
   }
 
   this.lastRenderTime = 0;
   this.fpsa = [];
   this.fps = 0;
 }
-Game.prototype.start = function (time) {
+Game.prototype.start = function () {
   this.running = true;
   this.interval = setInterval(function() {
     game.tick();
@@ -136,7 +137,7 @@ Game.prototype.tick = function () {
     messagediv.style.display = "block";
     this.stop();
   } else if (this.config.endOnEmpty && this.animals.length == 0) {
-    messagediv.innerHTML = "<p>Animals went extinct!</p>" +
+    messagediv.innerHTML = "<p>☠Animals went extinct!☠</p>" +
                            "Starvation: " + this.deaths.starvation + "<br>" +
                            "Old age: " + this.deaths.oldage;
     messagediv.style.display = "block";
@@ -427,11 +428,12 @@ function copyCfg(cfg) {
 }
 
 document.addEventListener("click", function (e) {
-  if (!game.running) {
+  console.log("Mouse click:", e);
+  if (e.toElement == canvas && !game.running) {
     messagediv.style.display = "none";
     game = new Game(cfg);
     game.start();
-  } else {
+  } else if (e.toElement == canvas) {
     var p = game.getPlant(Math.floor(e.pageX/game.config.tilesize),
                           Math.floor(e.pageY/game.config.tilesize));
     if (p) {
@@ -441,6 +443,26 @@ document.addEventListener("click", function (e) {
     }
   }
 });
+
+var prevbtn;
+function uiSetSpeed(speed, caller) {
+  if (speed == 0 && game.running) {
+    prevbtn = document.getElementsByClassName("selected-btn")[0];
+    caller.classList.add("selected-btn");
+    game.stop();
+  } else if (speed == 0) {
+    caller.classList.remove("selected-btn");
+    prevbtn.classList.add("selected-btn");
+    game.start();
+  } else {
+    prevbtn = document.getElementsByClassName("selected-btn")[0];
+    prevbtn.classList.remove("selected-btn");
+    caller.classList.add("selected-btn");
+    game.stop();
+    game.config.gamespeed = speed;
+    game.start();
+  }
+}
 
 game = new Game(cfg);
 game.start();

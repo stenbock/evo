@@ -1,6 +1,7 @@
 <html>
 <head>
 <link rel="stylesheet" type="text/css" href="style.css">
+<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
 </head>
 <body>
 <canvas id="canvas"></canvas>
@@ -10,6 +11,13 @@
 	FPS: 0
 </div>
 <div id="message"></div>
+<div id="speed">
+<button onClick="uiSetSpeed(0, this)"><i class="fa fa-pause"></i></button>
+<button onClick="uiSetSpeed(50, this)"><i class="fa fa-step-forward"></i></button>
+<button onClick="uiSetSpeed(16, this)" class="selected-btn"><i class="fa fa-play"></i></button>
+<button onClick="uiSetSpeed(10, this)"><i class="fa fa-forward"></i></button>
+<button onClick="uiSetSpeed(1, this)"><i class="fa fa-fast-forward"></i></button>
+</div>
 <script src="evo.js"></script>
 </body>
 </html>
