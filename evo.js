@@ -8,6 +8,7 @@
 // do experiments with 0 mutation systems, like black/white plants and animals
 // make it possible to run many simulations side by side!
 // live changing size of the map
+// more of the config should be ratios based on screen size, like a plantratio
 var screenW = document.body.clientWidth;
 var screenH = document.body.clientHeight;
 
@@ -22,8 +23,9 @@ var defaultCfg = {
   tilesize: 20,
   eatlimit: 40,
   endOnEmpty: true,
-  startPlants: 100,
-  startAnimals: 10,
+  startPlants: 200,
+  startHerbivores: 20,
+  startCarnivores: 2,
   plantBorder: 1,
   gamespeed: 16,
   plantMutation: 10,
@@ -31,7 +33,8 @@ var defaultCfg = {
 };
 var cfg = copyCfg(defaultCfg);
 cfg.startPlants = 400;
-cfg.startAnimals = 20;
+cfg.startHerbivores = 0;
+cfg.startCarnivores = 200;
 cfg.endOnEmpty = true;
 cfg.gamespeed = 16;
 cfg.tilesize = 10;
@@ -72,12 +75,18 @@ function Game(config) {
       this.plants[x][y] = new Plant(x, y, new Color(0, randomInt(128, 255), 0));
     }
   }
-  for (var i = 0; i < this.config.startAnimals; i++) {
+  for (var i = 0; i < this.config.startHerbivores; i++) {
     var x = randomInt(0, this.max_x);
     var y = randomInt(0, this.max_x);
-    var na = new Animal(x, y, new Color(0, 255, 0));
+    var na = new Animal(x, y, new Color(0, 255, 0), herbivore);
     na.life += 200;
     na.energy += 400;
+    this.animals.push(na);
+  }
+  for (var i = 0; i < this.config.startCarnivores; i++) {
+    var x = randomInt(0, this.max_x);
+    var y = randomInt(0, this.max_x);
+    var na = new Animal(x, y, new Color(0, 255, 0), carnivore);
     this.animals.push(na);
   }
 
@@ -221,172 +230,6 @@ Color.prototype.mutate = function (mut) {
   return c;
 }
 
-function Plant(x, y, color) {
-  this.x = x;
-  this.y = y;
-  this.color = color;
-  this.size = 10;
-}
-Plant.prototype.draw = function(context) {
-  var t = game.config.tilesize;
-
-  var startx = this.x*t;
-  var starty = this.y*t;
-
-  if (this.visited) {
-    context.fillStyle = 'black';
-    context.fillRect(startx, starty, t, t);
-    this.visited = false;
-  }
-
-  var size = t - game.config.plantBorder;
-
-  /*
-  startx = startx + Math.floor((t/2)*100/this.size);
-  starty = starty + Math.floor((t/2)*100/this.size);
-  */
-
-  size = Math.floor(size * this.size/100);
-
-  if (size > 0) {
-    context.fillStyle = this.color.toString();
-    context.fillRect(startx, starty, size, size);
-  }
-}
-Plant.prototype.grow = function() {
-  // TODO: could use a huge rethink
-  var r = randomInt(0, 5);
-  if (this.size < 100) {
-    this.size += r;
-    game.rerenderRq(this);
-  }
-  if (this.size >= 100) {
-    var d = randomDir(this.x, this.y);
-    var p = game.getPlant(d.x, d.y);
-    if (!p) {
-      var np = new Plant(d.x, d.y, this.color.mutate(game.config.plantMutation));
-      game.plantsAlive++;
-      np.size = 30;
-      this.size = 60;
-
-      // TODO: addPlant
-      if (!game.plants[d.x]) {
-        game.plants[d.x] = [];
-      }
-      game.plants[d.x][d.y] = np;
-      game.rerenderRq(this);
-    } else {
-      this.size = 100;
-    }
-  }
-}
-
-function Animal(x, y, color) {
-  this.x = x;
-  this.y = y;
-  this.color = color;
-  this.life = randomInt(600, 700);
-  this.energy = 300;
-  this.reproductionCooldown = 300;
-}
-Animal.prototype.draw = function(context) {
-  context.beginPath();
-  context.arc(this.x*game.config.tilesize+game.config.tilesize/2,
-              this.y*game.config.tilesize+game.config.tilesize/2,
-              game.config.tilesize/2-2, 0, 2 * Math.PI, false);
-  context.fillStyle = this.color.toString();
-  context.fill();
-  context.lineWidth = 1;
-  context.strokeStyle = '#003300';
-  context.stroke();
-}
-Animal.prototype.move = function() {
-  var r = randomInt(0, 3);
-  var ps = [];
-  var eat = 0;
-  var eatp;
-
-  // TODO: not map limit safe
-  ps[0] = game.getPlant(this.x+1, this.y);
-  ps[1] = game.getPlant(this.x, this.y+1);
-  ps[2] = game.getPlant(this.x-1, this.y);
-  ps[3] = game.getPlant(this.x, this.y-1);
-
-  for (var j = 0; j < ps.length; j++) {
-    var i = (j+r) % 4;
-    var e = this.eatVal(ps[i]);
-
-    if (e > eat) {
-      eatp = ps[i];
-      eat = e;
-    }
-  }
-
-  if (eat > game.config.eatlimit) {
-    this.x = eatp.x;
-    this.y = eatp.y;
-  } else {
-    var d = randomDir(this.x, this.y);
-    this.x = d.x;
-    this.y = d.y;
-  }
-}
-Animal.prototype.ai = function() {
-  // TODO: split ai into parts, and make it modular
-  this.reproductionCooldown--;
-  this.energy -= 10;
-  this.life--;
-
-  var p = game.getPlant(this.x, this.y);
-  if (p) { p.visited = true; }
-  game.rerenderRq(p != null ? p : new RerenderSq(this.x, this.y));
-  if (this.life <= 0) {
-    game.deaths.oldage++;
-    deleteAnimal(this);
-    return;
-  }
-
-  if (this.energy <= 0) {
-    game.deaths.starvation++;
-    deleteAnimal(this);
-    return;
-  }
-
-  var eat = this.eatVal(p);
-  if (eat < game.config.eatlimit) {  // move
-    this.move();
-  } else {  // eat
-    if (p.size < eat && this.energy > 4000) { // graze
-      this.move();
-    } else if (p.size < eat) {
-      this.energy += p.size;
-      p.size = -1;
-      game.plants[p.x][p.y] = null;
-      game.plantsAlive--;
-    } else {
-      this.energy += eat;
-      p.size -= eat;
-    }
-  }
-
-  if (this.reproductionCooldown <= 0 && this.energy > 4000) {  // breed
-    var na = new Animal(this.x, this.y, this.color.mutate(game.config.animalMutation));
-    this.energy = 2000;
-    this.reproductionCooldown = 200;
-    game.animals.push(na);
-  }
-}
-Animal.prototype.eatVal = function (p) {
-  if (!p)
-    return 0;
-
-  var eff = Math.abs(this.color.r - p.color.r);
-  eff += Math.abs(this.color.g - p.color.g);
-  eff += Math.abs(this.color.b - p.color.b);
-  eff = 1-eff/765;
-  return Math.floor(50*eff);
-}
-
 function RerenderSq(x, y) {
   this.x = x;
   this.y = y;
@@ -451,7 +294,7 @@ document.addEventListener("click", function (e) {
     var p = game.getPlant(Math.floor(e.pageX/game.config.tilesize),
                           Math.floor(e.pageY/game.config.tilesize));
     if (p) {
-      var a = new Animal(p.x, p.y, p.color);
+      var a = new Animal(p.x, p.y, p.color, herbivore);
       game.animals.push(a);
       console.log("Mouse click created:", a);
       game.render();

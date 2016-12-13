@@ -7,9 +7,7 @@
 <body>
 <canvas id="canvas"></canvas>
 <div id="stats">
-	Food: 0<br>
-	Animals: 0<br>
-	FPS: 0
+stats
 </div>
 <div id="message"></div>
 <div id="speed">
@@ -19,6 +17,10 @@
 <button onClick="uiSetSpeed(16, this)" class="selected-btn"><i class="fa fa-forward"></i></button>
 <button onClick="uiSetSpeed(1, this)"><i class="fa fa-fast-forward"></i></button>
 </div>
+<script src="plants.js"></script>
+<script src="animals.js"></script>
+<script src="animals/herbivore.js"></script>
+<script src="animals/carnivore.js"></script>
 <script src="evo.js"></script>
 </body>
 </html>
