@@ -58,6 +58,10 @@ function Game(config) {
   this.plantsAlive = 0;
   this.animals = [];
 
+  this.totalTicks = 0; // total amount of ticks
+  this.lastTicks = 0; // total amount of ticks from the last render()
+  this.deltaTicks = 10; // the amount of ticks to wait until render() 
+
   // TODO: move these into a map based object?
   this.max_x = Math.floor(screenW/config.tilesize - 1);
   this.max_y = Math.floor(screenH/config.tilesize - 1);
@@ -116,7 +120,11 @@ Game.prototype.start = function () {
   this.running = true;
   this.interval = setInterval(function() {
     game.tick();
-    game.render();
+
+    if( (game.totalTicks - game.lastTicks) >= game.deltaTicks) {
+      game.render();
+      game.lastTicks = game.totalTicks;
+    }
     game.calculateFPS();
   }, this.config.gamespeed);
   setInterval(function() {
@@ -192,6 +200,8 @@ Game.prototype.tick = function () {
     messagediv.style.display = "block";
     this.stop();
   }
+
+  this.totalTicks++;
 }
 Game.prototype.render = function () {
   this.frameNumber++;
