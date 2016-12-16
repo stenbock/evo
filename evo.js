@@ -29,12 +29,13 @@ var defaultCfg = {
   plantBorder: 1,
   gamespeed: 16,
   plantMutation: 10,
-  animalMutation: 10
+  animalMutation: 10,
+  viewDistance: 100
 };
 var cfg = copyCfg(defaultCfg);
 cfg.startPlants = 400;
-cfg.startHerbivores = 0;
-cfg.startCarnivores = 200;
+cfg.startHerbivores = 40;
+cfg.startCarnivores = 4;
 cfg.endOnEmpty = true;
 cfg.gamespeed = 16;
 cfg.tilesize = 10;
@@ -42,6 +43,7 @@ cfg.plantBorder = 1;
 cfg.eatlimit = 40;
 cfg.animalMutation = 15;
 cfg.plantMutation = 5;
+cfg.viewDistance = 200;
 
 var game;
 
@@ -77,7 +79,7 @@ function Game(config) {
   }
   for (var i = 0; i < this.config.startHerbivores; i++) {
     var x = randomInt(0, this.max_x);
-    var y = randomInt(0, this.max_x);
+    var y = randomInt(0, this.max_y);
     var na = new Animal(x, y, new Color(0, 255, 0), herbivore);
     na.life += 200;
     na.energy += 400;
@@ -85,7 +87,7 @@ function Game(config) {
   }
   for (var i = 0; i < this.config.startCarnivores; i++) {
     var x = randomInt(0, this.max_x);
-    var y = randomInt(0, this.max_x);
+    var y = randomInt(0, this.max_y);
     var na = new Animal(x, y, new Color(0, 255, 0), carnivore);
     this.animals.push(na);
   }
@@ -165,6 +167,7 @@ Game.prototype.tick = function () {
     messagediv.innerHTML = "<p>☠Animals went extinct☠</p>" +
                            "Starvation: " + this.deaths.starvation + "<br>" +
                            "Old age: " + this.deaths.oldage + "<br>" +
+                           "Predation: " + this.deaths.predation + "<br>" +
                            "Click to restart";
     messagediv.style.display = "block";
     this.stop();
@@ -243,7 +246,12 @@ RerenderSq.prototype.draw = function (context) {
 
 function deleteAnimal(a) {
   var i = game.animals.indexOf(a);
-  game.animals.splice(i, 1);
+  if (i >= 0) {
+    game.animals.splice(i, 1);
+    return true;
+  } else {
+    return false;
+  }
 }
 
 function randomInt(min, max) {

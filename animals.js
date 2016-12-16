@@ -34,6 +34,19 @@ function Animal(x, y, color, def) {
     throw new Error("No ai function");
   }
 }
+Animal.prototype.moveTarget = function (target) {
+  if (this.x < target.x) {
+    this.x++;
+  } else if (this.x > target.x) {
+    this.x--;
+  } else if (this.y < target.y) {
+    this.y++;
+  } else if (this.y > target.y) {
+    this.y--;
+  }
+
+  return this.x == target.x && this.y == target.y;
+}
 
 function herbivoreDraw(context) {
   context.beginPath();
@@ -43,7 +56,7 @@ function herbivoreDraw(context) {
   context.fillStyle = this.color.toString();
   context.fill();
   context.lineWidth = 1;
-  context.strokeStyle = '#003300';
+  context.strokeStyle = 'black';
   context.stroke();
 }
 function herbivoreMove() {
@@ -147,12 +160,73 @@ function carnivoreDraw(context) {
   context.fillStyle = this.color.toString();
   context.fill();
   context.lineWidth = 0.3;
-  context.strokeStyle = '#003300';
+  context.strokeStyle = 'black';
   context.stroke();
 }
 
 function carnivoreAI() {
+  this.reproductionCooldown--;
+  this.energy -= 5;
+  this.life--;
+
+  // TODO make this in another function?
+  var p = game.getPlant(this.x, this.y);
+  if (p) { p.visited = true; }
+  game.rerenderRq(p != null ? p : new RerenderSq(this.x, this.y));
+
+  if (this.life <= 0) {
+    console.log('died of old age');
+    game.deaths.oldage++;
+    deleteAnimal(this);
+    return;
+  }
+
+  if (this.energy <= 0) {
+    console.log('died of starvation');
+    game.deaths.starvation++;
+    deleteAnimal(this);
+    return;
+  }
+
+  this.move(); 
 }
 
 function carnivoreMove() {
+  if (this.target) {
+    //console.log('have target');
+    var t = this.moveTarget(this.target);
+    if (t) {
+      //console.log('standing on target');
+      var da = deleteAnimal(this.target);
+      if (da) {
+        game.deaths.predation++;
+        this.energy += this.target.energy;
+        this.target = null;
+        return;
+      } else {
+        this.target = null;
+      }
+    }
+  } else {
+    var dmin = Number.MAX_VALUE;
+    var tar;
+    var me = this;
+    game.animals.forEach(function (a) {
+      if (a.def != me.def) {
+        var d = (a.x - me.x)*(a.x - me.x) + (a.y - me.y)*(a.y - me.y);
+        if (d < game.config.viewDistance && d < dmin) {
+          tar = a;
+          dmin = d;
+        }
+      }
+    });
+    if (tar) {
+      //console.log('have new target');
+      this.target = tar;
+    } else {
+      var rd = randomDir(this.x, this.y);
+      this.x = rd.x;
+      this.y = rd.y;
+    }
+  }
 }
