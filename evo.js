@@ -23,9 +23,9 @@ var defaultCfg = {
   tilesize: 20,
   eatlimit: 40,
   endOnEmpty: true,
-  startPlants: 200,
-  startHerbivores: 20,
-  startCarnivores: 2,
+  startPlants: 0.1,
+  startHerbivores: 0.01,
+  startCarnivores: 0.001,
   plantBorder: 1,
   gamespeed: 16,
   plantMutation: 10,
@@ -33,9 +33,9 @@ var defaultCfg = {
   viewDistance: 100
 };
 var cfg = copyCfg(defaultCfg);
-cfg.startPlants = 600;
-cfg.startHerbivores = 60;
-cfg.startCarnivores = 1;
+cfg.startPlants = 0.2;
+cfg.startHerbivores = 0.01;
+cfg.startCarnivores = 0.0002;
 cfg.endOnEmpty = true;
 cfg.gamespeed = 16;
 cfg.tilesize = 10;
@@ -61,11 +61,21 @@ function Game(config) {
   // TODO: move these into a map based object?
   this.max_x = Math.floor(screenW/config.tilesize - 1);
   this.max_y = Math.floor(screenH/config.tilesize - 1);
+  var mapsize = this.max_x * this.max_y;
+
+  var startPlants = Math.floor(this.config.startPlants*mapsize);
+  if (startPlants < 1) startPlants = 1;
+
+  var startHerbivores = Math.floor(this.config.startHerbivores*mapsize);
+  if (startHerbivores < 1) startHerbivores = 1;
+
+  var startCarnivores = Math.floor(this.config.startCarnivores*mapsize);
+  if (startCarnivores < 1) startCarnivores = 1;
 
   context.fillStyle = "black";
   context.fillRect(0, 0, canvas.width, canvas.height);
 
-  for (var i = 0; i < this.config.startPlants; i++) {
+  for (var i = 0; i < startPlants; i++) {
     var x = randomInt(0, this.max_x);
     var y = randomInt(0, this.max_y);
     var plotFree = !(this.plants[x] != null && this.plants[x][y] != null);
@@ -77,7 +87,7 @@ function Game(config) {
       this.plants[x][y] = new Plant(x, y, new Color(0, randomInt(128, 255), 0));
     }
   }
-  for (var i = 0; i < this.config.startHerbivores; i++) {
+  for (var i = 0; i < startHerbivores; i++) {
     var x = randomInt(0, this.max_x);
     var y = randomInt(0, this.max_y);
     var na = new Animal(x, y, new Color(0, 255, 0), herbivore);
@@ -85,7 +95,7 @@ function Game(config) {
     na.energy += 400;
     this.animals.push(na);
   }
-  for (var i = 0; i < this.config.startCarnivores; i++) {
+  for (var i = 0; i < startCarnivores; i++) {
     var x = randomInt(0, this.max_x);
     var y = randomInt(0, this.max_y);
     var na = new Animal(x, y, new Color(0, 255, 0), carnivore);

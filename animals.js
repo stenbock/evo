@@ -202,7 +202,7 @@ function carnivoreAI() {
     console.log('reproduced');
     var na = new Animal(this.x, this.y, this.color.mutate(game.config.animalMutation), this.def);
     this.energy = 2000;
-    this.reproductionCooldown = 200;
+    this.reproductionCooldown = 300;
     game.animals.push(na);
   } else {
     this.move(); 
