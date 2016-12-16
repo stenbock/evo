@@ -30,19 +30,27 @@ function Animal(x, y, color, def) {
     this.eatVal = herbivoreEatVal;
   } else if (def.functions.ai == "carnivoreAI") {
     this.ai = carnivoreAI;
+    this.moveTarget = moveTarget;
   } else {
     throw new Error("No ai function");
   }
 }
-Animal.prototype.moveTarget = function (target) {
-  if (this.x < target.x) {
-    this.x++;
-  } else if (this.x > target.x) {
-    this.x--;
-  } else if (this.y < target.y) {
-    this.y++;
-  } else if (this.y > target.y) {
-    this.y--;
+function moveTarget(target) {
+  var xdiff = Math.abs(this.x - target.x);
+  var ydiff = Math.abs(this.y - target.y);
+
+  if (xdiff > ydiff) {
+    if (this.x < target.x) {
+      this.x++;
+    } else if (this.x > target.x) {
+      this.x--;
+    }
+  } else {
+    if (this.y < target.y) {
+      this.y++;
+    } else if (this.y > target.y) {
+      this.y--;
+    }
   }
 
   return this.x == target.x && this.y == target.y;
@@ -188,9 +196,19 @@ function carnivoreAI() {
     return;
   }
 
-  this.move(); 
+  if (this.digestion) {
+    this.digestion--;
+  } else if (this.reproductionCooldown <= 0 && this.energy > 5000) {  // breed
+    console.log('reproduced');
+    var na = new Animal(this.x, this.y, this.color.mutate(game.config.animalMutation), this.def);
+    this.energy = 2000;
+    this.reproductionCooldown = 200;
+    game.animals.push(na);
+  } else {
+    this.move(); 
+  }
 }
-
+// TODO cannibalize if hungry
 function carnivoreMove() {
   if (this.target) {
     //console.log('have target');
@@ -199,8 +217,9 @@ function carnivoreMove() {
       //console.log('standing on target');
       var da = deleteAnimal(this.target);
       if (da) {
+        this.digestion = 30;
         game.deaths.predation++;
-        this.energy += this.target.energy;
+        this.energy += Math.floor(this.target.energy/2);
         this.target = null;
         return;
       } else {
@@ -214,7 +233,7 @@ function carnivoreMove() {
     game.animals.forEach(function (a) {
       if (a.def != me.def) {
         var d = (a.x - me.x)*(a.x - me.x) + (a.y - me.y)*(a.y - me.y);
-        if (d < game.config.viewDistance && d < dmin) {
+        if (!a.targeted && d < game.config.viewDistance && d < dmin) {
           tar = a;
           dmin = d;
         }
@@ -223,10 +242,17 @@ function carnivoreMove() {
     if (tar) {
       //console.log('have new target');
       this.target = tar;
+      this.target.targeted = true;
     } else {
+      var x = randomInt(0, game.max_x);
+      var y = randomInt(0, game.max_y);
+      this.target = {x: x, y: y};
+
+      /*
       var rd = randomDir(this.x, this.y);
       this.x = rd.x;
       this.y = rd.y;
+      */
     }
   }
 }

@@ -33,9 +33,9 @@ var defaultCfg = {
   viewDistance: 100
 };
 var cfg = copyCfg(defaultCfg);
-cfg.startPlants = 400;
-cfg.startHerbivores = 40;
-cfg.startCarnivores = 4;
+cfg.startPlants = 600;
+cfg.startHerbivores = 60;
+cfg.startCarnivores = 1;
 cfg.endOnEmpty = true;
 cfg.gamespeed = 16;
 cfg.tilesize = 10;
@@ -115,9 +115,19 @@ Game.prototype.start = function () {
   }, 1000);
 }
 Game.prototype.updateStats = function () {
+  var herbs = 0;
+  var carns = 0;
+  for (var i = 0; i < this.animals.length; i++) {
+    if (this.animals[i].def == herbivore) {
+      herbs++;
+    } else {
+      carns++;
+    }
+  }
   statsdiv.innerHTML = "Size: " + this.max_x + "x" + this.max_y + "<br>" +
                       "Plants: " + this.plantsAlive + "<br>" +
-                      "Animals: " + this.animals.length + "<br>" +
+                      "Herbivores: " + herbs + "<br>" +
+                      "Carnivores: " + carns + "<br>" +
                       "FPS: " + this.fps;
 }
 Game.prototype.calculateFPS = function () {
@@ -248,6 +258,10 @@ function deleteAnimal(a) {
   var i = game.animals.indexOf(a);
   if (i >= 0) {
     game.animals.splice(i, 1);
+    if (a.target) {
+      console.log('unset target');
+      a.target.targeted = false;
+    }
     return true;
   } else {
     return false;
