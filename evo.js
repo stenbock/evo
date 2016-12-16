@@ -60,7 +60,7 @@ function Game(config) {
 
   this.totalTicks = 0; // total amount of ticks
   this.lastTicks = 0; // total amount of ticks from the last render()
-  this.deltaTicks = 10; // the amount of ticks to wait until render() 
+  this.deltaTicks = 4; // the amount of ticks to wait until render() 
 
   // TODO: move these into a map based object?
   this.max_x = Math.floor(screenW/config.tilesize - 1);
@@ -347,6 +347,16 @@ document.addEventListener("click", function (e) {
 // TODO: fix stuck buttons
 var prevbtn;
 function uiSetSpeed(speed, caller) {
+  if (speed == 50) {                                                            
+    game.deltaTicks = 2;                                                        
+  } else if(speed == 16) {                                                      
+    game.deltaTicks = 4;                                                        
+  } else if(speed == 1) {                                                       
+    game.deltaTicks = 16;                                                        
+  } else {                                                                      
+    game.deltaTicks = 1;                                                        
+  }  
+
   if (speed == 0 && game.running) {
     prevbtn = document.getElementsByClassName("selected-btn")[0];
     caller.classList.add("selected-btn");
